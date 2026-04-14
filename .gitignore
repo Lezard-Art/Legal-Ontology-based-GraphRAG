@@ -1,0 +1,43 @@
+# Environment & secrets
+.env
+*.env
+API KEY.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Frontend build (reproducible)
+frontend/dist/
+
+# Logs
+*.log
+
+# Claude Code
+.claude/
