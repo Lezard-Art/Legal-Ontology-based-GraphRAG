@@ -8,9 +8,11 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import os
 import uuid
+import logging
 
 from . import models, schemas
 from .database import engine, get_db, Base
@@ -18,6 +20,33 @@ from .graph_builder import build_graph
 from .validator import validate_contract
 from .llm_parser import parse_contract
 from .extractor import extract_text
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# GraphRAG components (all optional — fall back gracefully if unavailable)
+# ---------------------------------------------------------------------------
+_neo4j_client = None
+_query_engine = None
+
+try:
+    from .neo4j_client import neo4j_client as _neo4j_client
+    from .graph_schema import init_schema
+    from .graph_sync import sync_contract_to_graph, sync_all_contracts, delete_contract_from_graph
+    from .query_engine import create_query_engine
+    _query_engine = create_query_engine()
+except Exception as _graphrag_err:
+    logger.warning(f"GraphRAG components unavailable: {_graphrag_err}")
+    sync_contract_to_graph = None
+    sync_all_contracts = None
+    delete_contract_from_graph = None
+    init_schema = None
+
+
+class QueryRequest(BaseModel):
+    question: str
+    strategy: str = "auto"
+
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -31,6 +60,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    if _neo4j_client is not None and init_schema is not None:
+        try:
+            with _neo4j_client.get_session() as session:
+                init_schema(session)
+        except Exception as e:
+            logger.warning(f"Failed to initialise Neo4j schema: {e}")
+
 
 # ---------------------------------------------------------------------------
 # Serve frontend static files
@@ -177,6 +217,8 @@ def delete_contract(contract_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Contract not found")
     db.delete(contract)
     db.commit()
+    if delete_contract_from_graph is not None:
+        delete_contract_from_graph(contract_id)
     return {"ok": True}
 
 
@@ -555,6 +597,11 @@ def parse_and_save(req: schemas.ParseRequest, db: Session = Depends(get_db)):
     contract = _save_parsed_contract(
         parsed, req.contract_name or "Untitled Contract", req.text, db
     )
+    if sync_contract_to_graph is not None:
+        try:
+            sync_contract_to_graph(contract.id, db)
+        except Exception as e:
+            logger.warning(f"Neo4j sync failed for contract {contract.id}: {e}")
     return _serialize_contract_full(contract, db)
 
 
@@ -612,7 +659,46 @@ async def parse_file_and_save(
         raise HTTPException(status_code=500, detail=parsed["error"])
 
     contract = _save_parsed_contract(parsed, name, text, db)
+    if sync_contract_to_graph is not None:
+        try:
+            sync_contract_to_graph(contract.id, db)
+        except Exception as e:
+            logger.warning(f"Neo4j sync failed for contract {contract.id}: {e}")
     return _serialize_contract_full(contract, db)
+
+
+# ---------------------------------------------------------------------------
+# GRAPHRAG QUERY
+# ---------------------------------------------------------------------------
+
+@app.post("/api/query")
+def query_graph(req: QueryRequest):
+    if _query_engine is None:
+        return {
+            "answer": (
+                "GraphRAG is not configured. Ensure Neo4j is running and "
+                "OPENAI_API_KEY is set, then restart the server."
+            ),
+            "sources": [],
+            "strategy": "local",
+        }
+    try:
+        return _query_engine.query(req.question)
+    except Exception as e:
+        logger.error(f"Query engine error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/graph/rebuild")
+def rebuild_graph(db: Session = Depends(get_db)):
+    if _neo4j_client is None or sync_all_contracts is None:
+        raise HTTPException(status_code=503, detail="Neo4j not configured.")
+    try:
+        sync_all_contracts(db)
+        return {"status": "rebuilt"}
+    except Exception as e:
+        logger.error(f"Graph rebuild error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------------------------------------------------------------------------

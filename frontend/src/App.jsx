@@ -629,11 +629,141 @@ function ParseView({ onSaved }) {
 
 
 // ═══════════════════════════════════════════════════════════════
+// QUERY VIEW
+// ═══════════════════════════════════════════════════════════════
+
+function QueryView() {
+  const [question, setQuestion] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
+  const [sourcesOpen, setSourcesOpen] = useState(false)
+
+  const handleQuery = async () => {
+    if (!question.trim()) return
+    setLoading(true)
+    setError(null)
+    setResult(null)
+    setSourcesOpen(false)
+    try {
+      const res = await fetch(`${API}/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, strategy: 'auto' }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.detail || 'Query failed')
+      } else {
+        setResult(data)
+      }
+    } catch (e) {
+      setError(e.message)
+    }
+    setLoading(false)
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleQuery()
+  }
+
+  return (
+    <div>
+      <h2 style={{ fontSize: '16px', marginBottom: '16px' }}>Query Contract Graph</h2>
+
+      <div style={styles.card}>
+        <label style={styles.label}>Ask a question about your contracts</label>
+        <textarea
+          style={{ ...styles.textarea, minHeight: '80px' }}
+          value={question}
+          onChange={e => setQuestion(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="e.g. What are the delivery obligations? Who has termination powers? What are the payment terms?"
+        />
+        <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button style={styles.btn} onClick={handleQuery} disabled={loading || !question.trim()}>
+            {loading ? 'Searching...' : 'Ask'}
+          </button>
+          <span style={{ fontSize: '12px', color: '#94a3b8' }}>or Ctrl+Enter</span>
+        </div>
+        {error && <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '13px' }}>{error}</p>}
+      </div>
+
+      {loading && (
+        <div style={{ ...styles.card, textAlign: 'center', padding: '40px', color: '#64748b' }}>
+          <div style={{ fontSize: '14px' }}>Searching the contract graph...</div>
+          <div style={{ marginTop: '8px', fontSize: '12px', color: '#94a3b8' }}>
+            Embedding query · traversing graph · synthesising answer
+          </div>
+        </div>
+      )}
+
+      {result && !loading && (
+        <div style={styles.card}>
+          <h3 style={{ fontSize: '14px', marginTop: 0, marginBottom: '12px', color: '#1e293b' }}>
+            Answer
+            <span style={{ ...styles.badge('#dbeafe'), marginLeft: '8px', fontWeight: 400 }}>
+              {result.strategy}
+            </span>
+          </h3>
+          <div style={{
+            fontSize: '14px',
+            lineHeight: '1.75',
+            whiteSpace: 'pre-wrap',
+            color: '#1e293b',
+          }}>
+            {result.answer}
+          </div>
+
+          {result.sources && result.sources.length > 0 && (
+            <div style={{ marginTop: '16px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+              <button
+                style={styles.btnSecondary}
+                onClick={() => setSourcesOpen(o => !o)}
+              >
+                {sourcesOpen ? 'Hide' : 'Show'} Sources ({result.sources.length})
+              </button>
+              {sourcesOpen && (
+                <div style={{ marginTop: '10px' }}>
+                  {result.sources.map((s, i) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 10px',
+                      marginBottom: '4px',
+                      background: '#f8fafc',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                    }}>
+                      <span style={styles.badge(COLORS[s.entity_type] ? COLORS[s.entity_type] + '33' : '#e2e8f0')}>
+                        {s.entity_type}
+                      </span>
+                      <code style={{ fontSize: '11px', color: '#64748b', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {s.id}
+                      </code>
+                      <span style={{ fontSize: '11px', color: '#94a3b8', flexShrink: 0 }}>
+                        score: {typeof s.score === 'number' ? s.score.toFixed(3) : '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════
 
 export default function App() {
-  const [view, setView] = useState('list')  // list | detail | parse
+  const [view, setView] = useState('list')  // list | detail | parse | query
   const [contracts, setContracts] = useState([])
   const [selectedId, setSelectedId] = useState(null)
 
@@ -654,6 +784,9 @@ export default function App() {
           <button style={styles.navBtn(view === 'parse')} onClick={() => setView('parse')}>
             Parse
           </button>
+          <button style={styles.navBtn(view === 'query')} onClick={() => setView('query')}>
+            Query
+          </button>
         </nav>
       </header>
       <main style={styles.main}>
@@ -673,6 +806,7 @@ export default function App() {
         {view === 'parse' && (
           <ParseView onSaved={() => { setView('list'); loadContracts() }} />
         )}
+        {view === 'query' && <QueryView />}
       </main>
     </div>
   )
