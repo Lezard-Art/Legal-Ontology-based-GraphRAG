@@ -1,0 +1,26 @@
+services:
+  corpus_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: corpus
+      POSTGRES_PASSWORD: corpus
+      POSTGRES_DB: corpus
+    ports: ["5433:5432"]
+    volumes: ["corpus_data:/var/lib/postgresql/data"]
+  parsed_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: parsed
+      POSTGRES_PASSWORD: parsed
+      POSTGRES_DB: parsed
+    ports: ["5434:5432"]
+    volumes: ["parsed_data:/var/lib/postgresql/data"]
+  api:
+    build: .
+    env_file: .env
+    ports: ["8000:8000"]
+    depends_on: [corpus_db, parsed_db]
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+volumes:
+  corpus_data:
+  parsed_data:

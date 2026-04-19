@@ -1,0 +1,38 @@
+# Environment and secrets
+.env
+*.env
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Raw downloaded legal data (can be very large)
+data/raw/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+pytest-cache-files-*/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Alembic generated DBs
+*.db-journal
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+*.swp
