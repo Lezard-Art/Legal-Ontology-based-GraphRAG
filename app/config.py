@@ -9,5 +9,12 @@ class Settings(BaseSettings):
     blob_store_root: str = "./data/raw"
     log_level: str = "INFO"
 
+    # API keys for sources that require authentication.
+    # Absent keys cause the corresponding fetcher to raise RuntimeError on use;
+    # the source row is still created in the DB with enabled=False.
+    congress_api_key: str = ""
+    courtlistener_api_key: str = ""
+    ny_senate_api_key: str = ""
+
 
 settings = Settings()
