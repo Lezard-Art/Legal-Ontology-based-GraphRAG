@@ -1,0 +1,588 @@
+@prefix :     <urn:normgraph:onto#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# ============================================================
+# Layer 3 — Domain Ontology
+#
+# Represents the real-world concepts that statutes regulate:
+# persons, organizations, places, activities, objects,
+# substances, events, situations, quantities, and the
+# DomainModule pattern for composable statutory domains.
+#
+# Schema authority: docs/ontology-schema.md §Layer 3
+# ============================================================
+
+<urn:normgraph:onto/domain>
+    a owl:Ontology ;
+    rdfs:label "Domain Ontology" ;
+    rdfs:comment "Real-world concepts regulated by US federal and NY state law." .
+
+# ============================================================
+# Forward declarations from other layers
+# (Full definitions in ufo-l.ttl)
+# ============================================================
+
+:LegalAgent
+    a owl:Class ;
+    rdfs:comment "Forward declaration — full definition in ufo-l.ttl." .
+
+# ============================================================
+# Core Classes
+# ============================================================
+
+:DomainEntity
+    a owl:Class ;
+    rdfs:label "DomainEntity" ;
+    rdfs:comment "Superclass for all real-world domain concepts regulated by statutes." .
+
+:Person
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "Person" ;
+    rdfs:comment "Represents an individual person referenced in statute." .
+
+:Organization
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "Organization" ;
+    rdfs:comment "Represents an organization, agency, corporation, union, or other collective entity." .
+
+:Place
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "Place" ;
+    rdfs:comment "Represents a jurisdiction, territory, or physical location referenced in statute." .
+
+:Activity
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "Activity" ;
+    rdfs:comment "Represents an action, process, or regulated conduct described in statute." .
+
+:RegulatedObject
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "RegulatedObject" ;
+    rdfs:comment "Represents a tangible thing (property, goods, equipment, weapons, etc.) regulated by law. Named RegulatedObject to avoid conflict with OWL meta-vocabulary." .
+
+:Substance
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "Substance" ;
+    rdfs:comment "Represents a material substance (chemical, drug, biological agent, hazardous material) regulated by law." .
+
+:Event
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "Event" ;
+    rdfs:comment "Represents a discrete happening in time relevant to a legal norm (violation, approval, notification, etc.)." .
+
+:Situation
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "Situation" ;
+    rdfs:comment "Represents a state of affairs that can hold over a time interval (employment, emergency, bankruptcy, etc.)." .
+
+:Quantity
+    a owl:Class ;
+    rdfs:subClassOf :DomainEntity ;
+    rdfs:label "Quantity" ;
+    rdfs:comment "Represents a measurable quantity or threshold used in legal rules (monetary amounts, time periods, age thresholds, etc.)." .
+
+:DomainModule
+    a owl:Class ;
+    rdfs:label "DomainModule" ;
+    rdfs:comment "A composable module grouping domain entities for a single statutory domain (e.g., employment, environmental, securities)." .
+
+# ============================================================
+# DomainEntity Properties (shared across all subclasses)
+# ============================================================
+
+:entityId
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainEntity ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "entityId" ;
+    rdfs:comment "Canonical URI following urn:uslm:domain:{concept-type}:{identifier} pattern." .
+
+:entityType
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainEntity ;
+    rdfs:range xsd:string ;
+    rdfs:label "entityType" ;
+    rdfs:comment "One of: Person, Organization, Place, Activity, RegulatedObject, Substance, Event, Situation, Quantity." .
+
+:entityLabel
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainEntity ;
+    rdfs:range xsd:string ;
+    rdfs:label "entityLabel" ;
+    rdfs:comment "Natural language label for this domain entity (e.g., 'State Implementation Plan')." .
+
+:entityDescription
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainEntity ;
+    rdfs:range xsd:string ;
+    rdfs:label "entityDescription" ;
+    rdfs:comment "Narrative description of this entity and its legal significance." .
+
+:definedIn
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainEntity ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "definedIn" ;
+    rdfs:comment "URI of the statute/section that defines this concept." .
+
+:synonyms
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainEntity ;
+    rdfs:range xsd:string ;
+    rdfs:label "synonyms" ;
+    rdfs:comment "Alternative names used in statute for this concept (multivalued)." .
+
+:relatedConcepts
+    a owl:ObjectProperty ;
+    rdfs:domain :DomainEntity ;
+    rdfs:range :DomainEntity ;
+    rdfs:label "relatedConcepts" ;
+    rdfs:comment "Other domain entities that are semantically related to this one (multivalued)." .
+
+# ============================================================
+# Person Properties
+# ============================================================
+
+:firstName
+    a owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:string ;
+    rdfs:label "firstName" .
+
+:lastName
+    a owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:string ;
+    rdfs:label "lastName" .
+
+:personType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:string ;
+    rdfs:label "personType" ;
+    rdfs:comment "One of: Individual, LegalFictionalPerson, Deceased, Incapacitated." .
+
+:citizenship
+    a owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:string ;
+    rdfs:label "citizenship" ;
+    rdfs:comment "Country or state of citizenship (e.g., 'United States', 'New York')." .
+
+:residenceJurisdiction
+    a owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "residenceJurisdiction" ;
+    rdfs:comment "URI of the jurisdiction where this person resides." .
+
+:roleCategoryInLaw
+    a owl:DatatypeProperty ;
+    rdfs:domain :Person ;
+    rdfs:range xsd:string ;
+    rdfs:label "roleCategoryInLaw" ;
+    rdfs:comment "Legal roles this person may occupy (multivalued; e.g., 'employee', 'creditor', 'plaintiff')." .
+
+# ============================================================
+# Organization Properties
+# ============================================================
+
+:organizationType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Organization ;
+    rdfs:range xsd:string ;
+    rdfs:label "organizationType" ;
+    rdfs:comment "One of: Corporation, Partnership, GovernmentAgency, NonProfit, Union, Trust, Other." .
+
+:isGovernmentOrg
+    a owl:DatatypeProperty ;
+    rdfs:domain :Organization ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "isGovernmentOrg" ;
+    rdfs:comment "True if this organization is a public governmental body." .
+
+:orgJurisdiction
+    a owl:DatatypeProperty ;
+    rdfs:domain :Organization ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "orgJurisdiction" ;
+    rdfs:comment "URI of the jurisdiction of incorporation or authority." .
+
+:legalAuthority
+    a owl:DatatypeProperty ;
+    rdfs:domain :Organization ;
+    rdfs:range xsd:string ;
+    rdfs:label "legalAuthority" ;
+    rdfs:comment "Source statute section that creates or authorizes this organization." .
+
+:orgCapacity
+    a owl:DatatypeProperty ;
+    rdfs:domain :Organization ;
+    rdfs:range xsd:string ;
+    rdfs:label "orgCapacity" ;
+    rdfs:comment "What this organization is legally empowered to do, per statute." .
+
+:employees
+    a owl:ObjectProperty ;
+    rdfs:domain :Organization ;
+    rdfs:range :Person ;
+    rdfs:label "employees" ;
+    rdfs:comment "Persons who are employees of this organization (multivalued)." .
+
+:subOrganizations
+    a owl:ObjectProperty ;
+    rdfs:domain :Organization ;
+    rdfs:range :Organization ;
+    rdfs:label "subOrganizations" ;
+    rdfs:comment "Organizational subdivisions (departments, bureaus, offices) (multivalued)." .
+
+# ============================================================
+# Place Properties
+# ============================================================
+
+:placeType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Place ;
+    rdfs:range xsd:string ;
+    rdfs:label "placeType" ;
+    rdfs:comment "One of: State, County, Municipality, FederalTerritory, NativeAmericanLand, InternationalLocation." .
+
+:placeJurisdiction
+    a owl:DatatypeProperty ;
+    rdfs:domain :Place ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "placeJurisdiction" ;
+    rdfs:comment "If this place is itself a jurisdiction, its canonical URI (e.g., urn:uslm:domain:jurisdiction:federal)." .
+
+:containedWithin
+    a owl:ObjectProperty ;
+    rdfs:domain :Place ;
+    rdfs:range :Place ;
+    rdfs:label "containedWithin" ;
+    rdfs:comment "Broader jurisdiction or place that contains this one (e.g., county within state)." .
+
+:legalStatus
+    a owl:DatatypeProperty ;
+    rdfs:domain :Place ;
+    rdfs:range xsd:string ;
+    rdfs:label "legalStatus" ;
+    rdfs:comment "Legal characterization (e.g., 'independent nation', 'US state', 'incorporated city')." .
+
+:governingAuthority
+    a owl:ObjectProperty ;
+    rdfs:domain :Place ;
+    rdfs:range :Organization ;
+    rdfs:label "governingAuthority" ;
+    rdfs:comment "The governmental body that exercises authority over this place." .
+
+# ============================================================
+# Activity Properties
+# ============================================================
+
+:activityType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Activity ;
+    rdfs:range xsd:string ;
+    rdfs:label "activityType" ;
+    rdfs:comment "One of: Employment, Commerce, Transportation, Communication, Scientific, Medical, LandUse, Financial, PublicService, CriminalConduct, Other." .
+
+:legalRegulation
+    a owl:DatatypeProperty ;
+    rdfs:domain :Activity ;
+    rdfs:range xsd:string ;
+    rdfs:label "legalRegulation" ;
+    rdfs:comment "Brief description of how law regulates this activity." .
+
+:requiredCertifications
+    a owl:DatatypeProperty ;
+    rdfs:domain :Activity ;
+    rdfs:range xsd:string ;
+    rdfs:label "requiredCertifications" ;
+    rdfs:comment "Qualifications or licenses that actors must hold to engage in this activity (multivalued)." .
+
+:requiredPermits
+    a owl:DatatypeProperty ;
+    rdfs:domain :Activity ;
+    rdfs:range xsd:string ;
+    rdfs:label "requiredPermits" ;
+    rdfs:comment "Permits or approvals that must be obtained before engaging in this activity (multivalued)." .
+
+:standardsOrRequirements
+    a owl:DatatypeProperty ;
+    rdfs:domain :Activity ;
+    rdfs:range xsd:string ;
+    rdfs:label "standardsOrRequirements" ;
+    rdfs:comment "Substantive standards the activity must meet (multivalued; e.g., 'OSHA safety standards')." .
+
+# ============================================================
+# RegulatedObject Properties
+# ============================================================
+
+:objectType
+    a owl:DatatypeProperty ;
+    rdfs:domain :RegulatedObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "objectType" ;
+    rdfs:comment "One of: RealProperty, PersonalProperty, Money, Security, Vehicle, Weapon, Equipment, Other." .
+
+:isRegulated
+    a owl:DatatypeProperty ;
+    rdfs:domain :RegulatedObject ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "isRegulated" ;
+    rdfs:comment "True if this object is subject to specific regulatory requirements." .
+
+:regulatoryFramework
+    a owl:DatatypeProperty ;
+    rdfs:domain :RegulatedObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "regulatoryFramework" ;
+    rdfs:comment "The regulatory regime applicable (e.g., 'subject to FDA regulation', 'NFA-regulated')." .
+
+:ownershipRules
+    a owl:DatatypeProperty ;
+    rdfs:domain :RegulatedObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "ownershipRules" ;
+    rdfs:comment "Who may own this object and under what conditions." .
+
+:usageRestrictions
+    a owl:DatatypeProperty ;
+    rdfs:domain :RegulatedObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "usageRestrictions" ;
+    rdfs:comment "Permitted and prohibited uses of this object (multivalued)." .
+
+:valueOrQuantification
+    a owl:DatatypeProperty ;
+    rdfs:domain :RegulatedObject ;
+    rdfs:range xsd:string ;
+    rdfs:label "valueOrQuantification" ;
+    rdfs:comment "How the value of this object is measured (monetary, by weight, by volume, etc.)." .
+
+# ============================================================
+# Substance Properties
+# ============================================================
+
+:substanceType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Substance ;
+    rdfs:range xsd:string ;
+    rdfs:label "substanceType" ;
+    rdfs:comment "One of: Drug, Chemical, Biological, Controlled, Hazardous, Radioactive, Other." .
+
+:regulatoryStatus
+    a owl:DatatypeProperty ;
+    rdfs:domain :Substance ;
+    rdfs:range xsd:string ;
+    rdfs:label "regulatoryStatus" ;
+    rdfs:comment "One of: Prohibited, Controlled, Licensed, Approved, Unregulated." .
+
+:controlLevel
+    a owl:DatatypeProperty ;
+    rdfs:domain :Substance ;
+    rdfs:range xsd:string ;
+    rdfs:label "controlLevel" ;
+    rdfs:comment "If controlled: schedule or list designation (e.g., 'Schedule I', 'List Chemical')." .
+
+:usagePermissions
+    a owl:DatatypeProperty ;
+    rdfs:domain :Substance ;
+    rdfs:range xsd:string ;
+    rdfs:label "usagePermissions" ;
+    rdfs:comment "Authorized uses and the conditions under which use is permitted (multivalued)." .
+
+:possessionRules
+    a owl:DatatypeProperty ;
+    rdfs:domain :Substance ;
+    rdfs:range xsd:string ;
+    rdfs:label "possessionRules" ;
+    rdfs:comment "Who may possess this substance and in what quantities." .
+
+# ============================================================
+# Event Properties
+# ============================================================
+
+:eventType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Event ;
+    rdfs:range xsd:string ;
+    rdfs:label "eventType" ;
+    rdfs:comment "One of: LegalProceeding, Injury, Violation, Approval, Denial, Notification, Enactment, Other." .
+
+:eventTiming
+    a owl:DatatypeProperty ;
+    rdfs:domain :Event ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "eventTiming" ;
+    rdfs:comment "When this event occurred or is scheduled to occur." .
+
+:eventDuration
+    a owl:DatatypeProperty ;
+    rdfs:domain :Event ;
+    rdfs:range xsd:duration ;
+    rdfs:label "eventDuration" ;
+    rdfs:comment "How long this event lasts." .
+
+:prerequisiteEvents
+    a owl:ObjectProperty ;
+    rdfs:domain :Event ;
+    rdfs:range :Event ;
+    rdfs:label "prerequisiteEvents" ;
+    rdfs:comment "Events that must occur before this event can occur (multivalued)." .
+
+:consequentEvents
+    a owl:ObjectProperty ;
+    rdfs:domain :Event ;
+    rdfs:range :Event ;
+    rdfs:label "consequentEvents" ;
+    rdfs:comment "Events triggered by the occurrence of this event (multivalued)." .
+
+:parties
+    a owl:ObjectProperty ;
+    rdfs:domain :Event ;
+    rdfs:range :LegalAgent ;
+    rdfs:label "parties" ;
+    rdfs:comment "Legal agents involved in this event (multivalued)." .
+
+# ============================================================
+# Situation Properties
+# ============================================================
+
+:situationType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Situation ;
+    rdfs:range xsd:string ;
+    rdfs:label "situationType" ;
+    rdfs:comment "One of: LegalStatus, PhysicalCondition, ContractualState, Employment, Emergency, Bankruptcy, Other." .
+
+:temporalExtent
+    a owl:DatatypeProperty ;
+    rdfs:domain :Situation ;
+    rdfs:range xsd:string ;
+    rdfs:label "temporalExtent" ;
+    rdfs:comment "Description of the time interval over which this situation holds." .
+
+:constituents
+    a owl:ObjectProperty ;
+    rdfs:domain :Situation ;
+    rdfs:range :DomainEntity ;
+    rdfs:label "constituents" ;
+    rdfs:comment "Domain entities that compose or participate in this situation (multivalued)." .
+
+:implies
+    a owl:ObjectProperty ;
+    rdfs:domain :Situation ;
+    rdfs:range :Situation ;
+    rdfs:label "implies" ;
+    rdfs:comment "Other situations that are implied or entailed by this situation (multivalued)." .
+
+# ============================================================
+# Quantity Properties
+# ============================================================
+
+:quantityType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Quantity ;
+    rdfs:range xsd:string ;
+    rdfs:label "quantityType" ;
+    rdfs:comment "One of: Monetary, Temporal, Age, Weight, Volume, Distance, Percentage, Count, Other." .
+
+:quantityValue
+    a owl:DatatypeProperty ;
+    rdfs:domain :Quantity ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "quantityValue" ;
+    rdfs:comment "The numeric value of this quantity." .
+
+:quantityUnit
+    a owl:DatatypeProperty ;
+    rdfs:domain :Quantity ;
+    rdfs:range xsd:string ;
+    rdfs:label "quantityUnit" ;
+    rdfs:comment "Unit of measure (e.g., 'dollars', 'days', 'years', 'pounds', 'gallons', 'percent')." .
+
+:isThreshold
+    a owl:DatatypeProperty ;
+    rdfs:domain :Quantity ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "isThreshold" ;
+    rdfs:comment "True if this quantity represents a boundary that triggers legal effects." .
+
+:adjustmentMechanism
+    a owl:DatatypeProperty ;
+    rdfs:domain :Quantity ;
+    rdfs:range xsd:string ;
+    rdfs:label "adjustmentMechanism" ;
+    rdfs:comment "How this amount is adjusted over time (e.g., 'annually for inflation', 'by administrative regulation')." .
+
+:quantitySourceStatute
+    a owl:DatatypeProperty ;
+    rdfs:domain :Quantity ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "quantitySourceStatute" ;
+    rdfs:comment "URI of the statute/section that establishes this quantity or threshold." .
+
+# ============================================================
+# DomainModule Properties
+# ============================================================
+
+:moduleId
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainModule ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "moduleId" ;
+    rdfs:comment "Canonical URI for the module (e.g., urn:uslm:domain:module:employment)." .
+
+:moduleName
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainModule ;
+    rdfs:range xsd:string ;
+    rdfs:label "moduleName" ;
+    rdfs:comment "Human-readable name (e.g., 'Employment Law Domain', 'Environmental Law Domain')." .
+
+:moduleDescription
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainModule ;
+    rdfs:range xsd:string ;
+    rdfs:label "moduleDescription" ;
+    rdfs:comment "Description of the statutory domain covered by this module." .
+
+:applicableStatutes
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainModule ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "applicableStatutes" ;
+    rdfs:comment "URIs of statutes covered by this module (multivalued)." .
+
+:moduleEntities
+    a owl:ObjectProperty ;
+    rdfs:domain :DomainModule ;
+    rdfs:range :DomainEntity ;
+    rdfs:label "moduleEntities" ;
+    rdfs:comment "All DomainEntity instances defined in this module (multivalued)." .
+
+:moduleVersion
+    a owl:DatatypeProperty ;
+    rdfs:domain :DomainModule ;
+    rdfs:range xsd:string ;
+    rdfs:label "moduleVersion" ;
+    rdfs:comment "Semantic version of this module (e.g., '1.0.0')." .
+
+:extendsModule
+    a owl:ObjectProperty ;
+    rdfs:domain :DomainModule ;
+    rdfs:range :DomainModule ;
+    rdfs:label "extendsModule" ;
+    rdfs:comment "A more general module that this module builds upon." .

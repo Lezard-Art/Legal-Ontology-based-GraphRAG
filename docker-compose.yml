@@ -21,6 +21,22 @@ services:
     ports: ["8000:8000"]
     depends_on: [corpus_db, parsed_db]
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+  fuseki:
+    image: stain/jena-fuseki:5.1.0
+    ports: ["3030:3030"]
+    environment:
+      ADMIN_PASSWORD: admin
+      JVM_ARGS: "-Xmx2g"
+    volumes:
+      - fuseki_data:/fuseki
+      - ./ontology:/staging/ontology:ro
+    # On first start: POST /$/datasets with name=normgraph, type=tdb2.
+    # Then load vocabularies:
+    #   curl -u admin:admin -X POST http://localhost:3030/normgraph/data \
+    #        --data-binary @/staging/ontology/combined.ttl \
+    #        -H "Content-Type: text/turtle"
+    # See docs/triple-store.md for full setup instructions.
 volumes:
   corpus_data:
   parsed_data:
+  fuseki_data:

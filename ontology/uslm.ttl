@@ -1,0 +1,497 @@
+@prefix :     <urn:normgraph:onto#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# ============================================================
+# Layer 4 — Document Structure (USLM / Akoma Ntoso)
+#
+# Captures the hierarchical organization of US federal and
+# NY state statutory text: Title → Chapter → Section →
+# Subsection → Paragraph, with cross-references, defined
+# terms, provenance, and amendment metadata.
+#
+# Schema authority: docs/ontology-schema.md §Layer 4
+# ============================================================
+
+<urn:normgraph:onto/uslm>
+    a owl:Ontology ;
+    rdfs:label "USLM/Akoma Ntoso Document Structure Ontology" ;
+    rdfs:comment "Document hierarchy and provenance for US Code, CFR, and Public Laws." .
+
+# ============================================================
+# Core Classes
+# ============================================================
+
+:DocumentNode
+    a owl:Class ;
+    rdfs:label "DocumentNode" ;
+    rdfs:comment "A node in the legislative document hierarchy (Title, Chapter, Section, Subsection, etc.)." .
+
+:DefinitionsSection
+    a owl:Class ;
+    rdfs:subClassOf :DocumentNode ;
+    rdfs:label "DefinitionsSection" ;
+    rdfs:comment "A DocumentNode that serves as a dedicated definitions section (e.g., '§ 2 — Definitions')." .
+
+:CrossReference
+    a owl:Class ;
+    rdfs:label "CrossReference" ;
+    rdfs:comment "A citation from one DocumentNode to another statute or section." .
+
+:DefinedTerm
+    a owl:Class ;
+    rdfs:label "DefinedTerm" ;
+    rdfs:comment "A term given a specific statutory meaning within a definitions section." .
+
+:Provenance
+    a owl:Class ;
+    rdfs:label "Provenance" ;
+    rdfs:comment "Tracks the legislative origin and history of a DocumentNode." .
+
+:Change
+    a owl:Class ;
+    rdfs:label "Change" ;
+    rdfs:comment "Describes a specific textual modification made by an amendment." .
+
+:OffsetRange
+    a owl:Class ;
+    rdfs:label "OffsetRange" ;
+    rdfs:comment "Character-level offsets mapping a node or extraction back to its source document." .
+
+# ============================================================
+# DocumentNode Properties
+# ============================================================
+
+:nodeId
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "nodeId" ;
+    rdfs:comment "Canonical URI for this provision (e.g., urn:uslm:statute:usc:42/1983)." .
+
+:nodeType
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:string ;
+    rdfs:label "nodeType" ;
+    rdfs:comment "One of: Title, Subtitle, Chapter, Subchapter, Part, Subpart, Section, Subsection, Paragraph, Clause, Subclause." .
+
+:nodeTitle
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:string ;
+    rdfs:label "nodeTitle" ;
+    rdfs:comment "Official heading of this node (e.g., 'Civil Rights')." .
+
+:nodeNumber
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:string ;
+    rdfs:label "nodeNumber" ;
+    rdfs:comment "Official citation number (e.g., '§ 1983', '42 USC 1983', 'Title 42')." .
+
+:nodeOrdinal
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:integer ;
+    rdfs:label "nodeOrdinal" ;
+    rdfs:comment "Sequence number among sibling nodes for stable sort order." .
+
+:textContent
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:string ;
+    rdfs:label "textContent" ;
+    rdfs:comment "Full text of this node and all its children (recursive aggregation)." .
+
+:shortText
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:string ;
+    rdfs:label "shortText" ;
+    rdfs:comment "First sentence or brief summary of this node's content." .
+
+:parentNode
+    a owl:ObjectProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range :DocumentNode ;
+    rdfs:label "parentNode" ;
+    rdfs:comment "The immediate parent node in the document hierarchy." .
+
+:childNodes
+    a owl:ObjectProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range :DocumentNode ;
+    rdfs:label "childNodes" ;
+    rdfs:comment "Immediate child nodes (not recursive) (multivalued)." .
+
+:precedingNode
+    a owl:ObjectProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range :DocumentNode ;
+    rdfs:label "precedingNode" ;
+    rdfs:comment "The previous sibling node (for reading order)." .
+
+:followingNode
+    a owl:ObjectProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range :DocumentNode ;
+    rdfs:label "followingNode" ;
+    rdfs:comment "The next sibling node (for reading order)." .
+
+:nodeCrossReferences
+    a owl:ObjectProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range :CrossReference ;
+    rdfs:label "nodeCrossReferences" ;
+    rdfs:comment "All cross-references to other sections found in this node's text (multivalued)." .
+
+:nodeDefinedTerms
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:string ;
+    rdfs:label "nodeDefinedTerms" ;
+    rdfs:comment "Terms defined within this node (extracted from 'For purposes of' clauses) (multivalued)." .
+
+:sourceProvenance
+    a owl:ObjectProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range :Provenance ;
+    rdfs:label "sourceProvenance" ;
+    rdfs:comment "Provenance record describing the legislative origin of this node." .
+
+:authorityStatement
+    a owl:DatatypeProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range xsd:string ;
+    rdfs:label "authorityStatement" ;
+    rdfs:comment "Delegated authority statement (e.g., 'Authorized by 42 USC § 1981a')." .
+
+:legislativeHistory
+    a owl:ObjectProperty ;
+    rdfs:domain :DocumentNode ;
+    rdfs:range :Amendment ;
+    rdfs:label "legislativeHistory" ;
+    rdfs:comment "All amendments that have affected this node, in chronological order (multivalued)." .
+
+# ---- DefinitionsSection ----
+
+:sectionDefinedTerms
+    a owl:ObjectProperty ;
+    rdfs:domain :DefinitionsSection ;
+    rdfs:range :DefinedTerm ;
+    rdfs:label "sectionDefinedTerms" ;
+    rdfs:comment "The DefinedTerm objects contained in this section (multivalued)." .
+
+:applicableSections
+    a owl:DatatypeProperty ;
+    rdfs:domain :DefinitionsSection ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "applicableSections" ;
+    rdfs:comment "URIs of sections that use the definitions in this section (multivalued)." .
+
+# ============================================================
+# CrossReference Properties
+# ============================================================
+
+:referenceId
+    a owl:DatatypeProperty ;
+    rdfs:domain :CrossReference ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "referenceId" ;
+    rdfs:comment "Unique identifier for this cross-reference instance." .
+
+:sourceNode
+    a owl:ObjectProperty ;
+    rdfs:domain :CrossReference ;
+    rdfs:range :DocumentNode ;
+    rdfs:label "sourceNode" ;
+    rdfs:comment "The DocumentNode containing the reference." .
+
+:targetNode
+    a owl:ObjectProperty ;
+    rdfs:domain :CrossReference ;
+    rdfs:range :DocumentNode ;
+    rdfs:label "targetNode" ;
+    rdfs:comment "The DocumentNode being referenced." .
+
+:targetStatute
+    a owl:DatatypeProperty ;
+    rdfs:domain :CrossReference ;
+    rdfs:range xsd:string ;
+    rdfs:label "targetStatute" ;
+    rdfs:comment "Canonical citation string (e.g., '42 USC § 1983', '29 CFR § 1926.502')." .
+
+:referenceText
+    a owl:DatatypeProperty ;
+    rdfs:domain :CrossReference ;
+    rdfs:range xsd:string ;
+    rdfs:label "referenceText" ;
+    rdfs:comment "The verbatim text in the source that makes the reference." .
+
+:referenceType
+    a owl:DatatypeProperty ;
+    rdfs:domain :CrossReference ;
+    rdfs:range xsd:string ;
+    rdfs:label "referenceType" ;
+    rdfs:comment "One of: Direct, Conceptual, ParallelLaw, Implementing." .
+
+:semanticRelation
+    a owl:DatatypeProperty ;
+    rdfs:domain :CrossReference ;
+    rdfs:range xsd:string ;
+    rdfs:label "semanticRelation" ;
+    rdfs:comment "One of: Defines, Applies, Modifies, Excepts, Incorporates, Interprets." .
+
+# ============================================================
+# DefinedTerm Properties
+# ============================================================
+
+:term
+    a owl:DatatypeProperty ;
+    rdfs:domain :DefinedTerm ;
+    rdfs:range xsd:string ;
+    rdfs:label "term" ;
+    rdfs:comment "The term being defined (e.g., 'under color of state law', 'employer')." .
+
+:termDefinition
+    a owl:DatatypeProperty ;
+    rdfs:domain :DefinedTerm ;
+    rdfs:range xsd:string ;
+    rdfs:label "termDefinition" ;
+    rdfs:comment "The statutory definition of this term." .
+
+:domainOntologyUri
+    a owl:DatatypeProperty ;
+    rdfs:domain :DefinedTerm ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "domainOntologyUri" ;
+    rdfs:comment "URI of the domain ontology concept that maps to this term, if applicable." .
+
+:termApplicability
+    a owl:DatatypeProperty ;
+    rdfs:domain :DefinedTerm ;
+    rdfs:range xsd:string ;
+    rdfs:label "termApplicability" ;
+    rdfs:comment "Scope of the definition (e.g., 'Applies throughout this chapter', 'For purposes of this section only')." .
+
+# ============================================================
+# Provenance Properties
+# ============================================================
+
+:sourceType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Provenance ;
+    rdfs:range xsd:string ;
+    rdfs:label "sourceType" ;
+    rdfs:comment "One of: OriginalEnactment, Amendment, Restatement, JudicialInterpretation." .
+
+:publicLawSource
+    a owl:DatatypeProperty ;
+    rdfs:domain :Provenance ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "publicLawSource" ;
+    rdfs:comment "URI of the Public Law (e.g., urn:uslm:statute:public-law:42/1983)." .
+
+:congressNumber
+    a owl:DatatypeProperty ;
+    rdfs:domain :Provenance ;
+    rdfs:range xsd:integer ;
+    rdfs:label "congressNumber" ;
+    rdfs:comment "Number of the Congress that enacted this (e.g., 97 for the 97th Congress)." .
+
+:enactmentDate
+    a owl:DatatypeProperty ;
+    rdfs:domain :Provenance ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "enactmentDate" ;
+    rdfs:comment "Date the statute was enacted (signed into law)." .
+
+:provenanceEffectiveDate
+    a owl:DatatypeProperty ;
+    rdfs:domain :Provenance ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "provenanceEffectiveDate" ;
+    rdfs:comment "Date the provision came into legal effect (may differ from enactment date)." .
+
+:changes
+    a owl:ObjectProperty ;
+    rdfs:domain :Provenance ;
+    rdfs:range :Change ;
+    rdfs:label "changes" ;
+    rdfs:comment "Individual textual changes made in this amendment event (multivalued)." .
+
+# ============================================================
+# Change Properties
+# ============================================================
+
+:changeType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Change ;
+    rdfs:range xsd:string ;
+    rdfs:label "changeType" ;
+    rdfs:comment "One of: TextReplaced, TextAdded, TextRemoved, SectionRepealed, SectionAdded, Renumbered." .
+
+:beforeText
+    a owl:DatatypeProperty ;
+    rdfs:domain :Change ;
+    rdfs:range xsd:string ;
+    rdfs:label "beforeText" ;
+    rdfs:comment "The text as it read before the change (for TextReplaced or TextRemoved)." .
+
+:afterText
+    a owl:DatatypeProperty ;
+    rdfs:domain :Change ;
+    rdfs:range xsd:string ;
+    rdfs:label "afterText" ;
+    rdfs:comment "The text as it reads after the change (for TextReplaced or TextAdded)." .
+
+:changeLocation
+    a owl:DatatypeProperty ;
+    rdfs:domain :Change ;
+    rdfs:range xsd:string ;
+    rdfs:label "changeLocation" ;
+    rdfs:comment "Description of where in the node the change occurred (e.g., 'subsection (b)(2)')." .
+
+# ============================================================
+# OffsetRange Properties
+# ============================================================
+
+:startOffset
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "startOffset" ;
+    rdfs:comment "0-indexed character offset of the start of the span in the source document." .
+
+:endOffset
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "endOffset" ;
+    rdfs:comment "Character offset of the end of the span (exclusive)." .
+
+:startLine
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "startLine" ;
+    rdfs:comment "1-indexed line number of the start of the span." .
+
+:endLine
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "endLine" ;
+    rdfs:comment "1-indexed line number of the end of the span." .
+
+:startColumn
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "startColumn" ;
+    rdfs:comment "0-indexed column of the start character on its line." .
+
+:endColumn
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "endColumn" ;
+    rdfs:comment "0-indexed column of the end character on its line." .
+
+:offsetSourceDocument
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "offsetSourceDocument" ;
+    rdfs:comment "If offsets span multiple source documents, the document these offsets apply to." .
+
+# ============================================================
+# Amendment Class and Properties
+# (Defined here because it belongs to the document/provenance
+#  layer; also forward-declared in legalruleml.ttl)
+# ============================================================
+
+:Amendment
+    a owl:Class ;
+    rdfs:label "Amendment" ;
+    rdfs:comment "Tracks how a statutory provision has been modified over time." .
+
+:amendmentId
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "amendmentId" ;
+    rdfs:comment "Canonical URI for this amendment (e.g., urn:uslm:amendment:public-law:117/123:sec5)." .
+
+:originalProvisionUri
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "originalProvisionUri" ;
+    rdfs:comment "URI of the provision being amended." .
+
+:amendmentPublicLaw
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "amendmentPublicLaw" ;
+    rdfs:comment "URI of the Public Law that made this amendment." .
+
+:dateEnacted
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "dateEnacted" ;
+    rdfs:comment "Date the amending legislation was signed into law." .
+
+:amendmentEffectiveDate
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "amendmentEffectiveDate" ;
+    rdfs:comment "Date the amendment takes legal effect." .
+
+:sunsetDate
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "sunsetDate" ;
+    rdfs:comment "Date the amendment expires (for temporary amendments)." .
+
+:amendmentType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:string ;
+    rdfs:label "amendmentType" ;
+    rdfs:comment "One of: Added, Modified, Repealed, Reenacted." .
+
+:amendedText
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:string ;
+    rdfs:label "amendedText" ;
+    rdfs:comment "The new statutory text introduced by this amendment (for Added or Modified)." .
+
+:previousText
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:string ;
+    rdfs:label "previousText" ;
+    rdfs:comment "The original text prior to the amendment (for Modified or Repealed)." .
+
+:repealDate
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "repealDate" ;
+    rdfs:comment "Date the repeal takes effect (for Repealed amendments)." .
+
+:successorProvision
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "successorProvision" ;
+    rdfs:comment "URI of the provision(s) that replace a repealed provision (multivalued)." .

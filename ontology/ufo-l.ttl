@@ -1,0 +1,447 @@
+@prefix :     <urn:normgraph:onto#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# ============================================================
+# Layer 1 — Legal Positions (UFO-L)
+#
+# Based on: Hohfeld's eight fundamental legal conceptions
+#           (Right, Duty, Liberty, NoRight, Power, Disability,
+#            Immunity, Subjection) extended with Alexy's triadic
+#           model distinguishing positive (action) from negative
+#           (omission) positions.
+#
+# Schema authority: docs/ontology-schema.md §Layer 1
+# ============================================================
+
+<urn:normgraph:onto/ufo-l>
+    a owl:Ontology ;
+    rdfs:label "UFO-L Legal Positions Ontology" ;
+    rdfs:comment "Hohfeldian legal positions extended with Alexy's triadic model." .
+
+# ============================================================
+# Core Classes
+# ============================================================
+
+:LegalAgent
+    a owl:Class ;
+    rdfs:label "LegalAgent" ;
+    rdfs:comment "A participant in a legal relation: named individual, organization, or legal role." .
+
+:NamedPerson
+    a owl:Class ;
+    rdfs:subClassOf :LegalAgent ;
+    rdfs:label "NamedPerson" ;
+    rdfs:comment "A specific individual identified by name." .
+
+:NamedOrganization
+    a owl:Class ;
+    rdfs:subClassOf :LegalAgent ;
+    rdfs:label "NamedOrganization" ;
+    rdfs:comment "A specific legal entity (e.g., 'The United States', 'State Department')." .
+
+:LegalRole
+    a owl:Class ;
+    rdfs:subClassOf :LegalAgent ;
+    rdfs:label "LegalRole" ;
+    rdfs:comment "A generic category of agent (e.g., 'any person', 'a federal officer'). Most common in statutory law." .
+
+:GovernmentEntity
+    a owl:Class ;
+    rdfs:subClassOf :NamedOrganization, :LegalRole ;
+    rdfs:label "GovernmentEntity" ;
+    rdfs:comment "A public body with delegated authority (e.g., EPA, Secretary of Labor)." .
+
+# ---- LegalRelator hierarchy ----
+
+:LegalRelator
+    a owl:Class ;
+    rdfs:label "LegalRelator" ;
+    rdfs:comment "A legal relation bundling two correlative legal positions. Every relator implies a counterpart position in another agent." .
+
+:RightDutyRelator
+    a owl:Class ;
+    rdfs:subClassOf :LegalRelator ;
+    rdfs:label "RightDutyRelator" ;
+    rdfs:comment "Hohfeld's prototypical correlative pair: one agent holds a right, the correlate holds a duty." .
+
+:NoRightPermissionRelator
+    a owl:Class ;
+    rdfs:subClassOf :LegalRelator ;
+    rdfs:label "NoRightPermissionRelator" ;
+    rdfs:comment "Permission and No-Right pair: one agent has a permission; the correlate has no right to interfere." .
+
+:PowerLiabilityRelator
+    a owl:Class ;
+    rdfs:subClassOf :LegalRelator ;
+    rdfs:label "PowerLiabilityRelator" ;
+    rdfs:comment "Power and Liability/Subjection pair: one agent can change legal relations; the correlate is subject to that change." .
+
+:DisabilityImmunityRelator
+    a owl:Class ;
+    rdfs:subClassOf :LegalRelator ;
+    rdfs:label "DisabilityImmunityRelator" ;
+    rdfs:comment "Immunity and Disability pair: one agent is immune (cannot have power exercised against them); the correlate lacks that power." .
+
+:LibertyRelator
+    a owl:Class ;
+    rdfs:subClassOf :LegalRelator ;
+    rdfs:label "LibertyRelator" ;
+    rdfs:comment "Liberty: composite of PermissionToAct and PermissionToOmit. The correlate holds NoRight to act and NoRight to omit interference." .
+
+# ---- Supporting classes ----
+
+:ActionDescriptor
+    a owl:Class ;
+    rdfs:label "ActionDescriptor" ;
+    rdfs:comment "Describes what action or omission is the subject of a legal position, at any level of abstraction." .
+
+:LogicalCondition
+    a owl:Class ;
+    rdfs:label "LogicalCondition" ;
+    rdfs:comment "A condition that triggers or constrains a legal position. Can be simple or compound (AND/OR/NOT/IF-THEN)." .
+
+# ============================================================
+# LegalAgent Properties
+# ============================================================
+
+:agentId
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalAgent ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "agentId" ;
+    rdfs:comment "Canonical IRI following urn:uslm:entity:agent:{category}:{identifier}:{jurisdiction} pattern." .
+
+:agentType
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalAgent ;
+    rdfs:range xsd:string ;
+    rdfs:label "agentType" ;
+    rdfs:comment "One of: NamedPerson, NamedOrganization, LegalRole, GovernmentEntity." .
+
+:agentName
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalAgent ;
+    rdfs:range xsd:string ;
+    rdfs:label "agentName" ;
+    rdfs:comment "Natural language name (e.g., 'EPA Administrator', 'any person')." .
+
+:agentDescription
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalAgent ;
+    rdfs:range xsd:string ;
+    rdfs:label "agentDescription" ;
+    rdfs:comment "Clarification of who the agent is (e.g., 'any person acting under color of state law')." .
+
+:agentAliases
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalAgent ;
+    rdfs:range xsd:string ;
+    rdfs:label "agentAliases" ;
+    rdfs:comment "Alternative names or references in statute (multivalued)." .
+
+:agentJurisdiction
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalAgent ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "agentJurisdiction" ;
+    rdfs:comment "Jurisdiction URI from Domain Ontology in which this agent acts." .
+
+:canonicalDefinition
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalAgent ;
+    rdfs:range xsd:string ;
+    rdfs:label "canonicalDefinition" ;
+    rdfs:comment "Source statute section that defines this role or agent." .
+
+:isWildcard
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalAgent ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "isWildcard" ;
+    rdfs:comment "True if agent represents a category ('any person'); false if a specific individual." .
+
+# ============================================================
+# LegalRelator Properties
+# ============================================================
+
+:relatorId
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalRelator ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "relatorId" ;
+    rdfs:comment "Canonical IRI following urn:uslm:legal-position:{statute}:{type}:{holder}:{addressee}:{action}:{polarity} pattern." .
+
+:relatorType
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "relatorType" ;
+    rdfs:comment "Discriminator: RightDutyRelator | NoRightPermissionRelator | PowerLiabilityRelator | DisabilityImmunityRelator | LibertyRelator." .
+
+:holderAgent
+    a owl:ObjectProperty ;
+    rdfs:domain :LegalRelator ;
+    rdfs:range :LegalAgent ;
+    rdfs:label "holderAgent" ;
+    rdfs:comment "Agent holding the active position (right, permission, power, immunity)." .
+
+:addresseeAgent
+    a owl:ObjectProperty ;
+    rdfs:domain :LegalRelator ;
+    rdfs:range :LegalAgent ;
+    rdfs:label "addresseeAgent" ;
+    rdfs:comment "Agent holding the passive/correlate position (duty, no-right, liability, disability)." .
+
+:sourceProvision
+    a owl:DatatypeProperty ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "sourceProvision" ;
+    rdfs:comment "URI of the statute/section that created this relator. Used on LegalRelator and NormativeStatement." .
+
+:effectiveDate
+    a owl:DatatypeProperty ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "effectiveDate" ;
+    rdfs:comment "When this relator or rule comes into effect." .
+
+:expirationDate
+    a owl:DatatypeProperty ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "expirationDate" ;
+    rdfs:comment "When this relator or rule ceases to have effect." .
+
+:relatorStatus
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "relatorStatus" ;
+    rdfs:comment "One of: Pending, Active, Suspended, Terminated, Void." .
+
+:defeasibilityStatus
+    a owl:DatatypeProperty ;
+    rdfs:domain :LegalRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "defeasibilityStatus" ;
+    rdfs:comment "One of: Strict (cannot be overridden), Defeasible, Defeater (overrides a defeasible rule)." .
+
+# ---- RightDutyRelator ----
+
+:rightType
+    a owl:DatatypeProperty ;
+    rdfs:domain :RightDutyRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "rightType" ;
+    rdfs:comment "One of: RightToAction, RightToOmission." .
+
+:dutyType
+    a owl:DatatypeProperty ;
+    rdfs:domain :RightDutyRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "dutyType" ;
+    rdfs:comment "Correlative: DutyToAct (for RightToAction) or DutyToOmit (for RightToOmission)." .
+
+# ---- NoRightPermissionRelator ----
+
+:permissionType
+    a owl:DatatypeProperty ;
+    rdfs:domain :NoRightPermissionRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "permissionType" ;
+    rdfs:comment "One of: PermissionToAct, PermissionToOmit." .
+
+:noRightType
+    a owl:DatatypeProperty ;
+    rdfs:domain :NoRightPermissionRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "noRightType" ;
+    rdfs:comment "Correlative: NoRightToAction or NoRightToOmission." .
+
+# ---- PowerLiabilityRelator ----
+
+:powerType
+    a owl:DatatypeProperty ;
+    rdfs:domain :PowerLiabilityRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "powerType" ;
+    rdfs:comment "One of: PowerToCreate, PowerToModify, PowerToExtinguish." .
+
+:liabilityType
+    a owl:DatatypeProperty ;
+    rdfs:domain :PowerLiabilityRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "liabilityType" ;
+    rdfs:comment "Correlative: LiabilityToCreation | LiabilityToModification | LiabilityToExtinguishment." .
+
+:affectedRelator
+    a owl:ObjectProperty ;
+    rdfs:domain :PowerLiabilityRelator ;
+    rdfs:range :LegalRelator ;
+    rdfs:label "affectedRelator" ;
+    rdfs:comment "Which legal relator does this power create, modify, or extinguish?" .
+
+:triggersCondition
+    a owl:ObjectProperty ;
+    rdfs:domain :PowerLiabilityRelator ;
+    rdfs:range :LogicalCondition ;
+    rdfs:label "triggersCondition" ;
+    rdfs:comment "Condition that activates the power." .
+
+:exerciseMethod
+    a owl:DatatypeProperty ;
+    rdfs:domain :PowerLiabilityRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "exerciseMethod" ;
+    rdfs:comment "How the power is exercised (e.g., 'written notice', 'unilateral declaration')." .
+
+# ---- DisabilityImmunityRelator ----
+
+:immunityType
+    a owl:DatatypeProperty ;
+    rdfs:domain :DisabilityImmunityRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "immunityType" ;
+    rdfs:comment "Label for the immunity (e.g., 'Immunity from Suit', 'Immunity from Termination')." .
+
+:disabilityType
+    a owl:DatatypeProperty ;
+    rdfs:domain :DisabilityImmunityRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "disabilityType" ;
+    rdfs:comment "Correlative label (e.g., 'Disability to Sue', 'Disability to Terminate')." .
+
+:immunityScope
+    a owl:DatatypeProperty ;
+    rdfs:domain :DisabilityImmunityRelator ;
+    rdfs:range xsd:string ;
+    rdfs:label "immunityScope" ;
+    rdfs:comment "Scope of the immunity — what cannot be done to the holder." .
+
+:immunityExceptions
+    a owl:ObjectProperty ;
+    rdfs:domain :DisabilityImmunityRelator ;
+    rdfs:range :LogicalCondition ;
+    rdfs:label "immunityExceptions" ;
+    rdfs:comment "Conditions that waive or limit the immunity (multivalued)." .
+
+# ---- LibertyRelator ----
+
+:permissions
+    a owl:ObjectProperty ;
+    rdfs:domain :LibertyRelator ;
+    rdfs:range :NoRightPermissionRelator ;
+    rdfs:label "permissions" ;
+    rdfs:comment "The two component NoRightPermissionRelators (PermissionToAct + PermissionToOmit)." .
+
+# ---- ActionDescriptor ----
+
+:actionId
+    a owl:DatatypeProperty ;
+    rdfs:domain :ActionDescriptor ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "actionId" .
+
+:actionVerb
+    a owl:DatatypeProperty ;
+    rdfs:domain :ActionDescriptor ;
+    rdfs:range xsd:string ;
+    rdfs:label "actionVerb" ;
+    rdfs:comment "The action (e.g., 'deprive', 'discharge', 'employ')." .
+
+:actionPolarity
+    a owl:DatatypeProperty ;
+    rdfs:domain :ActionDescriptor ;
+    rdfs:range xsd:string ;
+    rdfs:label "actionPolarity" ;
+    rdfs:comment "One of: Positive (doing X), Negative (refraining from X)." .
+
+:actionObject
+    a owl:DatatypeProperty ;
+    rdfs:domain :ActionDescriptor ;
+    rdfs:range xsd:string ;
+    rdfs:label "actionObject" ;
+    rdfs:comment "What is acted upon (e.g., 'liberty', 'employment')." .
+
+:actionObjectUri
+    a owl:DatatypeProperty ;
+    rdfs:domain :ActionDescriptor ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "actionObjectUri" ;
+    rdfs:comment "Canonical URI of the object in the domain ontology." .
+
+:actionMannerConstraints
+    a owl:DatatypeProperty ;
+    rdfs:domain :ActionDescriptor ;
+    rdfs:range xsd:string ;
+    rdfs:label "actionMannerConstraints" ;
+    rdfs:comment "How the action must be performed (multivalued, e.g., 'without due process')." .
+
+:actionScope
+    a owl:DatatypeProperty ;
+    rdfs:domain :ActionDescriptor ;
+    rdfs:range xsd:string ;
+    rdfs:label "actionScope" ;
+    rdfs:comment "Context/scope of the action (e.g., 'under color of state law')." .
+
+:actionDescriptor
+    a owl:ObjectProperty ;
+    rdfs:range :ActionDescriptor ;
+    rdfs:label "actionDescriptor" ;
+    rdfs:comment "The action (or omission) that is the subject of a legal position. Used on RightDutyRelator, NoRightPermissionRelator, and LibertyRelator." .
+
+# ---- LogicalCondition ----
+
+:conditionId
+    a owl:DatatypeProperty ;
+    rdfs:domain :LogicalCondition ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "conditionId" .
+
+:conditionType
+    a owl:DatatypeProperty ;
+    rdfs:domain :LogicalCondition ;
+    rdfs:range xsd:string ;
+    rdfs:label "conditionType" ;
+    rdfs:comment "One of: Simple, Conjunction, Disjunction, Negation, Conditional." .
+
+:simpleStatement
+    a owl:DatatypeProperty ;
+    rdfs:domain :LogicalCondition ;
+    rdfs:range xsd:string ;
+    rdfs:label "simpleStatement" ;
+    rdfs:comment "Natural language description for Simple conditions." .
+
+:simpleStatementUri
+    a owl:DatatypeProperty ;
+    rdfs:domain :LogicalCondition ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "simpleStatementUri" ;
+    rdfs:comment "URI of the domain concept referenced in a Simple condition." .
+
+:conditionChildren
+    a owl:ObjectProperty ;
+    rdfs:domain :LogicalCondition ;
+    rdfs:range :LogicalCondition ;
+    rdfs:label "conditionChildren" ;
+    rdfs:comment "Nested sub-conditions (used for compound condition types)." .
+
+:activeAfter
+    a owl:DatatypeProperty ;
+    rdfs:domain :LogicalCondition ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "activeAfter" .
+
+:activeBefore
+    a owl:DatatypeProperty ;
+    rdfs:domain :LogicalCondition ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "activeBefore" .
+
+:temporalDuration
+    a owl:DatatypeProperty ;
+    rdfs:domain :LogicalCondition ;
+    rdfs:range xsd:duration ;
+    rdfs:label "temporalDuration" ;
+    rdfs:comment "How long the condition applies." .

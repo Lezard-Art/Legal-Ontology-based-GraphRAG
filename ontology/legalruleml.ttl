@@ -1,0 +1,525 @@
+@prefix :     <urn:normgraph:onto#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# ============================================================
+# Layer 2 — Normative Rules (LegalRuleML)
+#
+# Captures rule logic: prescriptions, definitions, penalties,
+# defeasibility, and temporal amendment metadata.
+# Cross-references Layer 1 (ufo-l.ttl) via shared property URIs.
+#
+# Schema authority: docs/ontology-schema.md §Layer 2
+# ============================================================
+
+<urn:normgraph:onto/legalruleml>
+    a owl:Ontology ;
+    rdfs:label "LegalRuleML Normative Rules Ontology" ;
+    rdfs:comment "Rule logic for statutory law: prescriptive statements, constitutive definitions, penalty rules, defeasibility, and amendments." .
+
+# ============================================================
+# Core Classes
+# ============================================================
+
+:NormativeStatement
+    a owl:Class ;
+    rdfs:label "NormativeStatement" ;
+    rdfs:comment "Superclass for all rule-like provisions. Represents any statement that imposes, permits, defines, or enforces obligations." .
+
+:PrescriptiveStatement
+    a owl:Class ;
+    rdfs:subClassOf :NormativeStatement ;
+    rdfs:label "PrescriptiveStatement" ;
+    rdfs:comment "Imposes an obligation, prohibition, or permission on agents. Distinguished by its deontic operator." .
+
+:ConstitutiveStatement
+    a owl:Class ;
+    rdfs:subClassOf :NormativeStatement ;
+    rdfs:label "ConstitutiveStatement" ;
+    rdfs:comment "Defines what something is for purposes of the statute. Provides definitions that other rules depend on." .
+
+:PenaltyStatement
+    a owl:Class ;
+    rdfs:subClassOf :NormativeStatement ;
+    rdfs:label "PenaltyStatement" ;
+    rdfs:comment "Specifies consequences of violating an obligation. Creates new legal positions triggered by breach." .
+
+:OverridingRule
+    a owl:Class ;
+    rdfs:label "OverridingRule" ;
+    rdfs:comment "Captures how one rule overrides another: lex specialis, lex posterior, lex superior, defeasibility, or exception clause." .
+
+:Amendment
+    a owl:Class ;
+    rdfs:label "Amendment" ;
+    rdfs:comment "Tracks how a statutory provision has been modified, added, repealed, or reenacted over time." .
+
+:OffsetRange
+    a owl:Class ;
+    rdfs:label "OffsetRange" ;
+    rdfs:comment "Character and line offsets for mapping an extraction back to its position in the source document." .
+
+# ============================================================
+# NormativeStatement Properties (shared by all subtypes)
+# ============================================================
+
+:statementId
+    a owl:DatatypeProperty ;
+    rdfs:domain :NormativeStatement ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "statementId" ;
+    rdfs:comment "Canonical IRI: urn:uslm:normative-rule:{statute-id}:{rule-sequence-number}." .
+
+:statementType
+    a owl:DatatypeProperty ;
+    rdfs:domain :NormativeStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "statementType" ;
+    rdfs:comment "Discriminator: PrescriptiveStatement | ConstitutiveStatement | PenaltyStatement." .
+
+# sourceProvision defined in ufo-l.ttl; reused here without re-declaration.
+
+:sourceText
+    a owl:DatatypeProperty ;
+    rdfs:domain :NormativeStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "sourceText" ;
+    rdfs:comment "The exact verbatim text from the statute." .
+
+:sourceOffsets
+    a owl:ObjectProperty ;
+    rdfs:range :OffsetRange ;
+    rdfs:label "sourceOffsets" ;
+    rdfs:comment "Character/line offsets of this statement in its source document. Also used on NormativeExtraction." .
+
+:statementLanguage
+    a owl:DatatypeProperty ;
+    rdfs:domain :NormativeStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "statementLanguage" ;
+    rdfs:comment "BCP-47 language tag. Default: 'en'." .
+
+:defeasibilityStrength
+    a owl:DatatypeProperty ;
+    rdfs:domain :NormativeStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "defeasibilityStrength" ;
+    rdfs:comment "One of: Strict (cannot be overridden), Defeasible (can be overcome), Defeater (overrides defeasible rules)." .
+
+:defeasesRules
+    a owl:DatatypeProperty ;
+    rdfs:domain :NormativeStatement ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "defeasesRules" ;
+    rdfs:comment "URIs of other NormativeStatements that this one defeats/overrides (multivalued)." .
+
+:isDefeatedBy
+    a owl:DatatypeProperty ;
+    rdfs:domain :NormativeStatement ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "isDefeatedBy" ;
+    rdfs:comment "URIs of NormativeStatements that defeat this one (multivalued)." .
+
+:superiorityRelations
+    a owl:ObjectProperty ;
+    rdfs:domain :NormativeStatement ;
+    rdfs:range :OverridingRule ;
+    rdfs:label "superiorityRelations" ;
+    rdfs:comment "OverridingRule instances that specify how this statement interacts with others." .
+
+# ============================================================
+# PrescriptiveStatement Properties
+# ============================================================
+
+:deonticOperator
+    a owl:DatatypeProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "deonticOperator" ;
+    rdfs:comment "One of: Obligation (must), Prohibition (must not), Permission (may)." .
+
+:createLegalPositions
+    a owl:ObjectProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range :LegalRelator ;
+    rdfs:label "createLegalPositions" ;
+    rdfs:comment "LegalRelators created by this prescriptive statement (multivalued)." .
+
+:condition
+    a owl:ObjectProperty ;
+    rdfs:range :LogicalCondition ;
+    rdfs:label "condition" ;
+    rdfs:comment "Antecedent (IF part) of the rule. Also used on PenaltyStatement defenses." .
+
+:consequence
+    a owl:ObjectProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range :LogicalCondition ;
+    rdfs:label "consequence" ;
+    rdfs:comment "Consequent (THEN part): the required state of affairs or action." .
+
+:ruleStrength
+    a owl:DatatypeProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "ruleStrength" ;
+    rdfs:comment "Arrow notation: → (strict), ⇒ (defeasible), ~> (defeater)." .
+
+:targetAgent
+    a owl:ObjectProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range :LegalAgent ;
+    rdfs:label "targetAgent" ;
+    rdfs:comment "Agent to whom the obligation, prohibition, or permission is directed." .
+
+:affectedAgent
+    a owl:ObjectProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range :LegalAgent ;
+    rdfs:label "affectedAgent" ;
+    rdfs:comment "Agent affected by the prescription, if different from targetAgent." .
+
+:deadline
+    a owl:DatatypeProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "deadline" ;
+    rdfs:comment "Absolute deadline by which an obligation must be fulfilled." .
+
+:deadlineDuration
+    a owl:DatatypeProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range xsd:duration ;
+    rdfs:label "deadlineDuration" ;
+    rdfs:comment "Relative deadline (e.g., P30D = within 30 days)." .
+
+:prescriptionExceptions
+    a owl:ObjectProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range :LogicalCondition ;
+    rdfs:label "prescriptionExceptions" ;
+    rdfs:comment "Conditions under which the prescription does NOT apply (multivalued)." .
+
+:crossReferences
+    a owl:DatatypeProperty ;
+    rdfs:domain :PrescriptiveStatement ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "crossReferences" ;
+    rdfs:comment "URIs of related provisions that constrain or clarify this rule (multivalued)." .
+
+# ============================================================
+# ConstitutiveStatement Properties
+# ============================================================
+
+:definedTerm
+    a owl:DatatypeProperty ;
+    rdfs:domain :ConstitutiveStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "definedTerm" ;
+    rdfs:comment "The term being defined (e.g., 'under color of state law')." .
+
+:definedTermUri
+    a owl:DatatypeProperty ;
+    rdfs:domain :ConstitutiveStatement ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "definedTermUri" ;
+    rdfs:comment "Canonical URI in Domain Ontology for the defined term." .
+
+:definition
+    a owl:DatatypeProperty ;
+    rdfs:domain :ConstitutiveStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "definition" ;
+    rdfs:comment "The full statutory definition text." .
+
+:definingStructure
+    a owl:ObjectProperty ;
+    rdfs:domain :ConstitutiveStatement ;
+    rdfs:range :DomainEntity ;
+    rdfs:label "definingStructure" ;
+    rdfs:comment "If the definition maps to a domain concept, the DomainEntity it references." .
+
+:definitionScope
+    a owl:DatatypeProperty ;
+    rdfs:domain :ConstitutiveStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "definitionScope" ;
+    rdfs:comment "Scope of applicability (e.g., 'For purposes of this Chapter')." .
+
+:applicableTo
+    a owl:DatatypeProperty ;
+    rdfs:domain :ConstitutiveStatement ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "applicableTo" ;
+    rdfs:comment "URIs of rules/relators this definition constrains (multivalued)." .
+
+:isInterpreted
+    a owl:DatatypeProperty ;
+    rdfs:domain :ConstitutiveStatement ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "isInterpreted" ;
+    rdfs:comment "True if this definition has been judicially interpreted differently than its plain text." .
+
+# ============================================================
+# PenaltyStatement Properties
+# ============================================================
+
+:triggeredBy
+    a owl:DatatypeProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "triggeredBy" ;
+    rdfs:comment "URI of the obligation/rule whose violation triggers this penalty." .
+
+:penaltyType
+    a owl:DatatypeProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "penaltyType" ;
+    rdfs:comment "One of: CivilLiability, CriminalPenalty, AdministrativePenalty, Injunction, EquitableLiability, RightsCreation." .
+
+:penaltyDescription
+    a owl:DatatypeProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "penaltyDescription" ;
+    rdfs:comment "Natural language description of the penalty." .
+
+:penaltyAmount
+    a owl:DatatypeProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "penaltyAmount" ;
+    rdfs:comment "Monetary amount or formula (e.g., '$10,000 per violation', 'treble damages')." .
+
+:createsNewRights
+    a owl:ObjectProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range :LegalRelator ;
+    rdfs:label "createsNewRights" ;
+    rdfs:comment "New LegalRelators (rights to remedy, powers to sue) created by this penalty (multivalued)." .
+
+:createsNewDuties
+    a owl:ObjectProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range :LegalRelator ;
+    rdfs:label "createsNewDuties" ;
+    rdfs:comment "New duties imposed on the violating party (multivalued)." .
+
+:isStrictLiability
+    a owl:DatatypeProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "isStrictLiability" ;
+    rdfs:comment "True if liability is imposed regardless of intent or fault." .
+
+:defenses
+    a owl:ObjectProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range :LogicalCondition ;
+    rdfs:label "defenses" ;
+    rdfs:comment "Conditions that excuse or mitigate the penalty (multivalued)." .
+
+:lossesRecoverable
+    a owl:DatatypeProperty ;
+    rdfs:domain :PenaltyStatement ;
+    rdfs:range xsd:string ;
+    rdfs:label "lossesRecoverable" ;
+    rdfs:comment "Types of loss recoverable (e.g., 'economic damages', 'emotional distress', 'punitive damages')." .
+
+# ============================================================
+# OverridingRule Properties
+# ============================================================
+
+:overriddenRuleId
+    a owl:DatatypeProperty ;
+    rdfs:domain :OverridingRule ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "overriddenRuleId" ;
+    rdfs:comment "URI of the NormativeStatement being overridden." .
+
+:overridingRuleId
+    a owl:DatatypeProperty ;
+    rdfs:domain :OverridingRule ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "overridingRuleId" ;
+    rdfs:comment "URI of the NormativeStatement doing the overriding." .
+
+:overrideType
+    a owl:DatatypeProperty ;
+    rdfs:domain :OverridingRule ;
+    rdfs:range xsd:string ;
+    rdfs:label "overrideType" ;
+    rdfs:comment "One of: LexSpecialis, LexPosterior, LexSuperior, Defeasibility, ExceptionClause." .
+
+:overridePriority
+    a owl:DatatypeProperty ;
+    rdfs:domain :OverridingRule ;
+    rdfs:range xsd:integer ;
+    rdfs:label "overridePriority" ;
+    rdfs:comment "Numeric priority when multiple overrides apply." .
+
+:overrideScope
+    a owl:DatatypeProperty ;
+    rdfs:domain :OverridingRule ;
+    rdfs:range xsd:string ;
+    rdfs:label "overrideScope" ;
+    rdfs:comment "Context in which this override applies." .
+
+:overrideSourceAuthority
+    a owl:DatatypeProperty ;
+    rdfs:domain :OverridingRule ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "overrideSourceAuthority" ;
+    rdfs:comment "URI of the court decision or statute that established this override." .
+
+# ============================================================
+# Amendment Properties
+# ============================================================
+
+:amendmentId
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "amendmentId" .
+
+:originalProvisionUri
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "originalProvisionUri" ;
+    rdfs:comment "URI of the provision that was amended." .
+
+:publicLawSource
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "publicLawSource" ;
+    rdfs:comment "URI of the enacting Public Law (e.g., urn:uslm:statute:public-law:117/123)." .
+
+:dateEnacted
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "dateEnacted" .
+
+:amendmentEffectiveDate
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "amendmentEffectiveDate" .
+
+:sunsetDate
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "sunsetDate" ;
+    rdfs:comment "When the amendment expires, if temporary." .
+
+:amendmentType
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:string ;
+    rdfs:label "amendmentType" ;
+    rdfs:comment "One of: Added, Modified, Repealed, Reenacted." .
+
+:amendedText
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:string ;
+    rdfs:label "amendedText" ;
+    rdfs:comment "The new text (for Modified or Added amendments)." .
+
+:previousText
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:string ;
+    rdfs:label "previousText" ;
+    rdfs:comment "The old text (for comparison on Modified amendments)." .
+
+:repealDate
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "repealDate" .
+
+:successorProvision
+    a owl:DatatypeProperty ;
+    rdfs:domain :Amendment ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "successorProvision" ;
+    rdfs:comment "URI of the provision(s) that replace a repealed provision." .
+
+# ============================================================
+# OffsetRange Properties
+# ============================================================
+
+:startOffset
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "startOffset" ;
+    rdfs:comment "0-indexed character offset of the start in the source document." .
+
+:endOffset
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "endOffset" ;
+    rdfs:comment "Character offset of the end (exclusive)." .
+
+:startLine
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "startLine" .
+
+:endLine
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "endLine" .
+
+:startColumn
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "startColumn" .
+
+:endColumn
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:integer ;
+    rdfs:label "endColumn" .
+
+:offsetSourceDocument
+    a owl:DatatypeProperty ;
+    rdfs:domain :OffsetRange ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "offsetSourceDocument" ;
+    rdfs:comment "URI of the source document if extracted from multiple documents." .
+
+# Forward reference to Domain layer — class declared in domain.ttl.
+# :DomainEntity is used as range of :definingStructure above.
+:DomainEntity
+    a owl:Class ;
+    rdfs:label "DomainEntity" ;
+    rdfs:comment "Forward-declared here for use as range of :definingStructure. Full definition in domain.ttl." .
+
+# Forward references to ufo-l classes used as range of properties above.
+:LegalRelator
+    a owl:Class ;
+    rdfs:label "LegalRelator" ;
+    rdfs:comment "Forward-declared here. Full definition in ufo-l.ttl." .
+
+:LegalAgent
+    a owl:Class ;
+    rdfs:label "LegalAgent" ;
+    rdfs:comment "Forward-declared here. Full definition in ufo-l.ttl." .
+
+:LogicalCondition
+    a owl:Class ;
+    rdfs:label "LogicalCondition" ;
+    rdfs:comment "Forward-declared here. Full definition in ufo-l.ttl." .
